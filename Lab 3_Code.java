@@ -54,37 +54,32 @@ class Auto extends Thread { // Class for the auto threads.
     this.port = prt;
     this.fry = ferry;
   }
-
+  // modified code
   public void run() {
+    try {
+        while (true) {
+            fry.ferryAtPort[port].acquire(); 
+            fry.mutex.acquire();
+            if (fry.canBoard(false)) {
+                fry.boardVehicle(false);
+                System.out.println("Auto " + id_auto + " boards the ferry at port " + port);
+                fry.boardQueue.release();
+                fry.mutex.release();
 
-    while (true) {
-      // Delay
-      try {
-        sleep((int) (300 * Math.random()));
-      } catch (Exception e) {
-        break;
-      }
-      System.out.println("Auto " + id_auto + " arrives at port " + port);
-
-      // Board
-      System.out.println("Auto " + id_auto + " boards on the ferry at port " + port);
-      fry.addLoad(); // increment the ferry load
-
-      // Arrive at the next port
-      port = 1 - port;
-
-      // disembark
-      System.out.println("Auto " + id_auto + " disembarks from ferry at port " + port);
-      fry.reduceLoad(); // Reduce load
-
-      // Terminate
-      if (isInterrupted()) {
-        break;
-      }
+                fry.unboardQueue.acquire(); 
+                System.out.println("Auto " + id_auto + " disembarks at port " + (1 - port));
+                fry.unboardingDone.release();
+                port = 1 - port;
+                Thread.sleep(1000);
+            } else {
+                fry.mutex.release();
+            }
+        }
+    } catch (InterruptedException e) {
+        System.out.println("Auto " + id_auto + " terminated.");
     }
-    System.out.println("Auto " + id_auto + " terminated");
-  }
 }
+// modified code
 
 class Ambulance extends Thread { // the Class for the Ambulance thread
 
