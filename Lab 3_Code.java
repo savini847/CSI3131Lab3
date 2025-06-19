@@ -131,19 +131,38 @@ class Ferry extends Thread { // The ferry Class
   private int port = 0; // Start at port 0
   private int load = 0; // Load is zero
   private int numCrossings; // number of crossings to execute
+  
   // Semaphores
+
+  public Semaphore semBoardPort0;  //semaphore for vehicle loading at port 0
+	public Semaphore semBoardPort1;  //semaphore for vehicle loading at port 1
+	public Semaphore semDisembark;  //semaphore for vehicles to disembark the ferry
+	public Semaphore semDepart;    //semaphore for the departure of the ferry
+
 
   public Ferry(int prt, int nbtours) {
     this.port = prt;
     numCrossings = nbtours;
+
+    //semaphores allow for first-come, first-serve access to board/disembark
+    semBoardPort0 = new Semaphore(0,true); 
+		semBoardPort1 = new Semaphore(0,true);
+		semDisembark = new Semaphore(0,true);
+		semDepart = new Semaphore(0,true);
+
   }
 
   public void run() {
     int i;
     System.out.println("Start at port " + port + " with a load of " + load + " vehicles");
 
+    semBoardPort0.release();  //signal vehicles to begin boarding
+
     // numCrossings crossings in our day
     for (i = 0; i < numCrossings; i++) {
+
+      semDepart.acquireUninterruptibly();  //wait for departure signal
+
       // The crossing
       System.out.println("Departure from port " + port + " with a load of " + load + " vehicles");
       System.out.println("Crossing " + i + " with a load of " + load + " vehicles");
@@ -154,7 +173,11 @@ class Ferry extends Thread { // The ferry Class
       }
       // Arrive at port
       System.out.println("Arrive at port " + port + " with a load of " + load + " vehicles");
+      
       // Disembarkment et loading
+
+      semDisembark.release(); //release disembark semaphore to allow vehicles to leave the ferry
+
     }
   }
 
