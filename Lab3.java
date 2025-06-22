@@ -32,14 +32,14 @@ public class Lab3 {
 
         try {
             fer.join();
-        } catch (InterruptedException e) {} // Wait until ferry terminates.
+        } catch (InterruptedException e) {} 
         
         System.out.println("\n=== Ferry stopped ===");
-        // Stop other threads.
         for (i = 0; i < NUM_CARS; i++) {
-            automobile[i].interrupt(); // Let's stop the auto threads.
+            automobile[i].interrupt(); 
         }
-        ambulance.interrupt(); // Stop the ambulance thread.
+        //stop ambulance thread
+        ambulance.interrupt(); 
     }
 }
 
@@ -57,10 +57,6 @@ class Auto extends Thread {
     public void run() {
         Semaphore semBoard;
         while (true) {
-            // Delay
-            try { sleep((int) (300*Math.random())); } 
-            catch (Exception e) { break; }
-            
             System.out.printf("[Port %d] Auto %d arrives\n", port, id_auto);
             
             semBoard = (port == Lab3.PORT0) ? fry.semBoardPort0 : fry.semBoardPort1;
@@ -73,13 +69,12 @@ class Auto extends Thread {
                 fry.addLoad();
                 
                 if(fry.getLoad() == Lab3.MAXLOAD) {
-                    System.out.println("--- Ferry is FULL ---");
+                    System.out.println("Ferry is FULL");
                     fry.semDepart.release();
                 } else {
                     semBoard.release();
                 }
                 
-                // Arrive at next port
                 port = 1 - port;
                 semBoard = (port == Lab3.PORT0) ? fry.semBoardPort0 : fry.semBoardPort1;
                 
@@ -90,7 +85,7 @@ class Auto extends Thread {
                 fry.reduceLoad();
                 
                 if(fry.getLoad() == 0) {
-                    System.out.println("--- Ferry is EMPTY ---");
+                    System.out.println("Ferry is empty");
                     semBoard.release();
                 } else {
                     fry.semDisembark.release();
@@ -119,16 +114,16 @@ class Ambulance extends Thread {
             try { sleep((int) (1000*Math.random())); } 
             catch (Exception e) { break; }
             
-            System.out.printf("\n[Port %d] !!! AMBULANCE arrives !!!\n", port);
+            System.out.printf("\n[Port %d] AMBULANCE arrives\n", port);
             
             semBoard = (port == Lab3.PORT0) ? fry.semBoardPort0 : fry.semBoardPort1;
 
             try {
                 semBoard.acquire();
-                System.out.printf("[Port %d] !!! AMBULANCE boards (Load: %d) !!!\n", 
+                System.out.printf("[Port %d] AMBULANCE boards (Load: %d)\n", 
                                  port, fry.getLoad()+1);
                 fry.addLoad();
-                System.out.println("!!! EMERGENCY DEPARTURE !!!");
+                System.out.println("EMERGENCY DEPARTURE");
                 fry.semDepart.release();
                 
                 // Arrive at next port
@@ -137,12 +132,12 @@ class Ambulance extends Thread {
                 
                 // Disembark
                 fry.semDisembark.acquire();
-                System.out.printf("[Port %d] !!! AMBULANCE disembarks (Load: %d) !!!\n", 
+                System.out.printf("[Port %d] AMBULANCE disembarks (Load: %d)\n", 
                                  port, fry.getLoad()-1);
                 fry.reduceLoad();
                 
                 if(fry.getLoad() == 0) {
-                    System.out.println("--- Ferry is EMPTY ---");
+                    System.out.println("Ferry is EMPTY");
                     semBoard.release();
                 } else {
                     fry.semDisembark.release();
@@ -157,18 +152,19 @@ class Ambulance extends Thread {
 }
 
 class Ferry extends Thread {
-    private int port = 0;
-    private int load = 0;
-    private int numCrossings;
-    
-    public Semaphore semBoardPort0;
-    public Semaphore semBoardPort1;
-    public Semaphore semDisembark;
-    public Semaphore semDepart;
+    private int port = 0; // Start at port 0
+    private int load = 0; // Load is zero
+    private int numCrossings; // number of crossings to execute
+  
+    public Semaphore semBoardPort0;  //semaphore for vehicle loading at port 0
+	public Semaphore semBoardPort1;  //semaphore for vehicle loading at port 1
+	public Semaphore semDisembark;  //semaphore for vehicles to disembark the ferry
+	public Semaphore semDepart;    //semaphore for the departure of the ferry
 
     public Ferry(int prt, int nbtours) {
         this.port = prt;
         numCrossings = nbtours;
+        //semaphores allow for first-come, first-serve access to board/disembark
         semBoardPort0 = new Semaphore(0, true); 
         semBoardPort1 = new Semaphore(0, true);
         semDisembark = new Semaphore(0, true);
@@ -183,20 +179,30 @@ class Ferry extends Thread {
             semDepart.acquireUninterruptibly();
             
             System.out.printf("\n=== Crossing %d ===\n", i);
-            System.out.printf("Departing port %d with load %d\n", port, load);
+            System.out.println("Departure from port " + port + " with a load of " + load + " vehicles");
+     
             
             port = 1 - port;
             try { sleep((int) (100 * Math.random())); } 
             catch (Exception e) {}
             
-            System.out.printf("Arrived at port %d with load %d\n", port, load);
+            System.out.println("Arrive at port " + port + " with a load of " + load + " vehicles");
             
             semDisembark.release();
         }
         System.out.println("\n=== Ferry completed all crossings ===");
     }
 
-    public int getLoad() { return load; }
-    public void addLoad() { load++; }
-    public void reduceLoad() { load--; }
-}
+    // methodes to manipulate the load of the ferry
+    public int getLoad() {
+        return (load);
+    }
+
+    public void addLoad() {
+        load = load + 1;
+    }
+
+    public void reduceLoad() {
+        load = load - 1;
+    }
+    }
